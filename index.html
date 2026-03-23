@@ -8,14 +8,8 @@
 <style>
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 :root {
-  --cream: #ffffff;
-  --warm: #fff8f3;
-  --amber: #ff8243;
-  --amber-light: #ffb380;
-  --green: #43b89c;
-  --text: #2a2a2a;
-  --text-dim: #aaaaaa;
-  --border: #ffe0cc;
+  --cream: #ffffff; --warm: #fff8f3; --amber: #ff8243; --amber-light: #ffb380;
+  --green: #43b89c; --text: #2a2a2a; --text-dim: #aaaaaa; --border: #ffe0cc;
   --shadow: 0 20px 60px rgba(255,130,67,0.1);
 }
 body { background: var(--cream); color: var(--text); font-family: 'DM Sans', sans-serif; min-height: 100vh; overflow-x: hidden; }
@@ -34,7 +28,7 @@ nav { position: relative; z-index: 10; padding: 20px 40px; display: flex; align-
 .hero h1 em { font-style: italic; color: var(--amber); }
 .hero p { font-size: 16px; color: var(--text-dim); line-height: 1.7; max-width: 480px; margin: 0 auto 28px; }
 .services-row { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; padding: 0 20px 32px; position: relative; z-index: 1; animation: fadeUp 0.7s 0.2s ease both; }
-.service-pill { background: white; border: 1.5px solid var(--border); border-radius: 100px; padding: 7px 15px; font-size: 12px; font-weight: 600; color: #888; box-shadow: 0 2px 8px rgba(255,130,67,0.06); transition: all 0.2s; }
+.service-pill { background: white; border: 1.5px solid var(--border); border-radius: 100px; padding: 7px 15px; font-size: 12px; font-weight: 600; color: #888; box-shadow: 0 2px 8px rgba(255,130,67,0.06); transition: all 0.2s; cursor: default; }
 .service-pill:hover { border-color: var(--amber); color: var(--amber); transform: translateY(-2px); }
 .chat-area { position: relative; z-index: 1; max-width: 680px; margin: 0 auto; padding: 0 20px 60px; animation: fadeUp 0.7s 0.15s ease both; }
 .chat-card { background: white; border-radius: 28px; overflow: hidden; box-shadow: var(--shadow), 0 0 0 1px rgba(255,130,67,0.08); display: flex; flex-direction: column; height: 560px; }
@@ -149,211 +143,108 @@ nav { position: relative; z-index: 10; padding: 20px 40px; display: flex; align-
   </div>
 </div>
 <div class="footer">Powered by <strong>SparkBuilds ⚡</strong> — AI Assistants for Small Businesses</div>
-
 <script>
+const GEMINI_API_KEY = "AIzaSyCkNccb5dJEiQoHXNASpxO08aeRytD2hVk";
 const WHATSAPP_NUMBER = "27636474283";
 const BUSINESS_EMAIL = "info@pawsgonewild.co.za";
-
-const SYSTEM = `You are a warm and friendly booking assistant for Paws Gone Wild Grooming, a mobile pet grooming service in South Africa. You travel to the customer's home.
-
-SERVICES & PRICING:
-- De-worm: R60 per tablet (1 tablet covers 10kg)
-- De-shed: R50–R100 (breed dependent)
-- Teeth brush: R20 per pet
-- Tick and flea dip: R30 per pet
-- Nose & Paws butter: R20 per pet
-- Haircuts: price depends on breed and size
-
-BOOKING DETAILS NEEDED (collect one at a time):
-1. Full name and surname
-2. Location — tell them to use the "📍 Share my location" button below, or type their street address
-3. Email address
-4. Pet breed
-5. Pet name
-6. Haircut required
-7. Special requirements or extras
-
-ON THE DAY: tap, electrical point, 1 clean towel per pet
-PAYMENT: bank transfer before OR cash on the day. 24-hour cancellation policy.
-
-IMPORTANT: When you have collected ALL booking details (name, location, email, pet breed, pet name, haircut), end your message with the exact text: [BOOKING_COMPLETE] followed by a JSON summary like this:
-[BOOKING_COMPLETE]{"name":"John Smith","location":"123 Main St","email":"john@example.com","breed":"Labrador","petName":"Max","haircut":"Full groom","extras":"None"}
-
-Be warm, friendly, use pet emojis. Keep responses 2-3 sentences.`;
-
+const SYSTEM = `You are a warm and friendly booking assistant for Paws Gone Wild Grooming, a mobile pet grooming service in South Africa. You travel to the customer home.\n\nSERVICES & PRICING:\n- De-worm: R60 per tablet (1 tablet covers 10kg)\n- De-shed: R50-R100 (breed dependent)\n- Teeth brush: R20 per pet\n- Tick and flea dip: R30 per pet\n- Nose & Paws butter: R20 per pet\n- Haircuts: price depends on breed and size\n\nBOOKING DETAILS NEEDED (collect one at a time):\n1. Full name and surname\n2. Location - tell them to use the 📍 Share my location button below, or type their street address\n3. Email address\n4. Pet breed\n5. Pet name\n6. Haircut required\n7. Special requirements or extras\n\nON THE DAY: tap, electrical point, 1 clean towel per pet\nPAYMENT: bank transfer before OR cash on the day. 24-hour cancellation policy.\n\nIMPORTANT: When you have collected ALL booking details (name, location, email, pet breed, pet name, haircut), end your message with the exact text: [BOOKING_COMPLETE] followed by a JSON summary like this:\n[BOOKING_COMPLETE]{"name":"John Smith","location":"123 Main St","email":"john@example.com","breed":"Labrador","petName":"Max","haircut":"Full groom","extras":"None"}\n\nBe warm, friendly, use pet emojis. Keep responses 2-3 sentences.`;
 let history = [];
 let busy = false;
-
-function addBot(text, qr = []) {
-  if (text.includes('[BOOKING_COMPLETE]')) {
+function addBot(text, qr=[]) {
+  if(text.includes('[BOOKING_COMPLETE]')) {
     const parts = text.split('[BOOKING_COMPLETE]');
     const cleanText = parts[0].trim();
     try {
       const bookingData = JSON.parse(parts[1].trim());
-      if (cleanText) {
-        const d = document.createElement('div');
-        d.className = 'msg-row bot';
-        d.innerHTML = `<div class="msg-avi">🐾</div><div><div class="bubble">${cleanText}</div></div>`;
-        document.getElementById('messages').appendChild(d);
-      }
+      if(cleanText) { const d=document.createElement('div'); d.className='msg-row bot'; d.innerHTML='<div class="msg-avi">🐾</div><div><div class="bubble">'+cleanText+'</div></div>'; document.getElementById('messages').appendChild(d); }
       showBookingComplete(bookingData);
-    } catch(e) {
-      renderBotMsg(text, qr);
-    }
+    } catch(e) { renderBotMsg(text,qr); }
     return;
   }
-  renderBotMsg(text, qr);
+  renderBotMsg(text,qr);
 }
-
-function renderBotMsg(text, qr = []) {
-  const msgs = document.getElementById('messages');
-  const d = document.createElement('div');
-  d.className = 'msg-row bot';
-  d.innerHTML = `
-    <div class="msg-avi">🐾</div>
-    <div>
-      <div class="bubble">${text}</div>
-      ${qr.length ? `<div class="qr-wrap">${qr.map(r => `<button class="qr-btn" onclick="sendMessage('${r}')">${r}</button>`).join('')}</div>` : ''}
-    </div>`;
+function renderBotMsg(text,qr=[]) {
+  const msgs=document.getElementById('messages');
+  const d=document.createElement('div');
+  d.className='msg-row bot';
+  d.innerHTML='<div class="msg-avi">🐾</div><div><div class="bubble">'+text+'</div>'+(qr.length?'<div class="qr-wrap">'+qr.map(r=>'<button class="qr-btn" onclick="sendMessage(\''+r+'\')">'+r+'</button>').join('')+'</div>':'')+'</div>';
   msgs.appendChild(d);
-  msgs.scrollTop = msgs.scrollHeight;
+  msgs.scrollTop=msgs.scrollHeight;
 }
-
 function showBookingComplete(data) {
-  const msgs = document.getElementById('messages');
-  const summary = `🐾 *New Booking Request - Paws Gone Wild*\n\n👤 *Name:* ${data.name}\n📍 *Location:* ${data.location}\n📧 *Email:* ${data.email}\n🐕 *Pet:* ${data.petName} (${data.breed})\n✂️ *Service:* ${data.haircut}\n📝 *Extras:* ${data.extras || 'None'}\n\n_Booking submitted via SparkBuilds chatbot_`;
-  const emailBody = `New Booking Request - Paws Gone Wild%0D%0A%0D%0AName: ${data.name}%0D%0ALocation: ${data.location}%0D%0AEmail: ${data.email}%0D%0APet: ${data.petName} (${data.breed})%0D%0AService: ${data.haircut}%0D%0AExtras: ${data.extras || 'None'}`;
-  const waUrl = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(summary)}`;
-  const emailUrl = `mailto:${BUSINESS_EMAIL}?subject=New Booking Request - ${data.petName}&body=${emailBody}`;
-
-  const d = document.createElement('div');
-  d.className = 'msg-row bot';
-  d.innerHTML = `
-    <div class="msg-avi">✅</div>
-    <div>
-      <div class="booking-card">
-        <div class="booking-card-title">✅ Booking Details Ready!</div>
-        <div class="booking-card-sub">Send your booking to Paws Gone Wild now — they'll confirm your appointment shortly!</div>
-        <div class="booking-actions">
-          <button class="booking-wa-btn" onclick="window.open('${waUrl}','_blank')">
-            💬 Send via WhatsApp
-          </button>
-          <button class="booking-email-btn" onclick="window.open('${emailUrl}','_blank')">
-            📧 Send via Email
-          </button>
-        </div>
-      </div>
-    </div>`;
+  const msgs=document.getElementById('messages');
+  const summary='🐾 *New Booking Request - Paws Gone Wild*\n\n👤 *Name:* '+data.name+'\n📍 *Location:* '+data.location+'\n📧 *Email:* '+data.email+'\n🐕 *Pet:* '+data.petName+' ('+data.breed+')\n✂️ *Service:* '+data.haircut+'\n📝 *Extras:* '+(data.extras||'None')+'\n\n_Booking submitted via SparkBuilds chatbot_';
+  const emailBody='New Booking Request%0D%0A%0D%0AName: '+data.name+'%0D%0ALocation: '+data.location+'%0D%0AEmail: '+data.email+'%0D%0APet: '+data.petName+' ('+data.breed+')%0D%0AService: '+data.haircut+'%0D%0AExtras: '+(data.extras||'None');
+  const waUrl='https://wa.me/'+WHATSAPP_NUMBER+'?text='+encodeURIComponent(summary);
+  const emailUrl='mailto:'+BUSINESS_EMAIL+'?subject=New Booking Request - '+data.petName+'&body='+emailBody;
+  const d=document.createElement('div');
+  d.className='msg-row bot';
+  d.innerHTML='<div class="msg-avi">✅</div><div><div class="booking-card"><div class="booking-card-title">✅ Booking Details Ready!</div><div class="booking-card-sub">Send your booking to Paws Gone Wild now!</div><div class="booking-actions"><button class="booking-wa-btn" onclick="window.open(\''+waUrl+'\',\'_blank\')">💬 Send via WhatsApp</button><button class="booking-email-btn" onclick="window.open(\''+emailUrl+'\',\'_blank\')">📧 Send via Email</button></div></div></div>';
   msgs.appendChild(d);
-  msgs.scrollTop = msgs.scrollHeight;
+  msgs.scrollTop=msgs.scrollHeight;
 }
-
 function addUser(text) {
-  const msgs = document.getElementById('messages');
-  const d = document.createElement('div');
-  d.className = 'msg-row user';
-  d.innerHTML = `<div class="msg-avi">👤</div><div class="bubble">${text}</div>`;
+  const msgs=document.getElementById('messages');
+  const d=document.createElement('div');
+  d.className='msg-row user';
+  d.innerHTML='<div class="msg-avi">👤</div><div class="bubble">'+text+'</div>';
   msgs.appendChild(d);
-  msgs.scrollTop = msgs.scrollHeight;
+  msgs.scrollTop=msgs.scrollHeight;
 }
-
 function showTyping() {
-  const msgs = document.getElementById('messages');
-  const d = document.createElement('div');
-  d.className = 'msg-row bot';
-  d.id = 'typing';
-  d.innerHTML = `<div class="msg-avi">🐾</div><div class="typing"><span></span><span></span><span></span></div>`;
-  msgs.appendChild(d);
-  msgs.scrollTop = msgs.scrollHeight;
+  const msgs=document.getElementById('messages');
+  const d=document.createElement('div');
+  d.className='msg-row bot'; d.id='typing';
+  d.innerHTML='<div class="msg-avi">🐾</div><div class="typing"><span></span><span></span><span></span></div>';
+  msgs.appendChild(d); msgs.scrollTop=msgs.scrollHeight;
 }
-
-function hideTyping() {
-  const t = document.getElementById('typing');
-  if (t) t.remove();
-}
-
+function hideTyping() { const t=document.getElementById('typing'); if(t) t.remove(); }
 function showLocationPicker() {
-  const msgs = document.getElementById('messages');
-  const d = document.createElement('div');
-  d.className = 'msg-row bot';
-  d.id = 'locationCard';
-  d.innerHTML = `
-    <div class="msg-avi">📍</div>
-    <div>
-      <div class="location-card">
-        <div class="location-card-title">📍 Share Your Location</div>
-        <div class="location-card-sub">Click below to pin your exact location so our groomer knows where to come!</div>
-        <button class="location-pick-btn" onclick="getLocation()">📍 Pin My Location</button>
-        <div class="location-success" id="locationSuccess">✅ Location shared!</div>
-      </div>
-    </div>`;
-  msgs.appendChild(d);
-  msgs.scrollTop = msgs.scrollHeight;
+  const msgs=document.getElementById('messages');
+  const d=document.createElement('div'); d.className='msg-row bot'; d.id='locationCard';
+  d.innerHTML='<div class="msg-avi">📍</div><div><div class="location-card"><div class="location-card-title">📍 Share Your Location</div><div class="location-card-sub">Click below to pin your exact location!</div><button class="location-pick-btn" onclick="getLocation()">📍 Pin My Location</button><div class="location-success" id="locationSuccess">✅ Location shared!</div></div></div>';
+  msgs.appendChild(d); msgs.scrollTop=msgs.scrollHeight;
 }
-
 function getLocation() {
-  if (navigator.geolocation) {
-    navigator.geolocation.getCurrentPosition(
-      (pos) => {
-        const lat = pos.coords.latitude;
-        const lng = pos.coords.longitude;
-        const mapsUrl = `https://www.google.com/maps?q=${lat},${lng}`;
-        document.getElementById('locationSuccess').style.display = 'block';
-        setTimeout(() => {
-          addUser(`📍 My location: ${mapsUrl}`);
-          history.push({ role: 'user', content: `My location: ${mapsUrl} (coordinates: ${lat.toFixed(5)}, ${lng.toFixed(5)})` });
-          const card = document.getElementById('locationCard');
-          if (card) card.remove();
-          addBot("Perfect! 📍 Got your location! What is your email address so we can send you a booking confirmation? 🐾");
-          history.push({ role: 'assistant', content: "Perfect! Got your location! What is your email address so we can send you a booking confirmation?" });
-        }, 800);
-      },
-      () => {
-        addBot("No problem! Just type your street address and suburb and we'll find you easily 🐾");
-      }
-    );
+  if(navigator.geolocation) {
+    navigator.geolocation.getCurrentPosition(pos=>{
+      const lat=pos.coords.latitude, lng=pos.coords.longitude;
+      const mapsUrl='https://www.google.com/maps?q='+lat+','+lng;
+      document.getElementById('locationSuccess').style.display='block';
+      setTimeout(()=>{
+        addUser('📍 My location: '+mapsUrl);
+        history.push({role:'user',parts:[{text:'My location: '+mapsUrl}]});
+        const card=document.getElementById('locationCard'); if(card) card.remove();
+        addBot("Perfect! 📍 Got your location! What is your email address? 🐾");
+        history.push({role:'model',parts:[{text:"Perfect! Got your location! What is your email address?"}]});
+      },800);
+    },()=>{ addBot("No problem! Just type your street address and suburb 🐾"); });
   }
 }
-
 async function sendMessage(override) {
-  if (busy) return;
-  const input = document.getElementById('chatInput');
-  const text = override || input.value.trim();
-  if (!text) return;
-  input.value = '';
+  if(busy) return;
+  const input=document.getElementById('chatInput');
+  const text=override||input.value.trim();
+  if(!text) return;
+  input.value='';
   addUser(text);
-  history.push({ role: 'user', content: text });
-  busy = true;
-  showTyping();
+  history.push({role:'user',parts:[{text}]});
+  busy=true; showTyping();
   try {
-    // ✅ Calls YOUR Netlify function — no API key exposed in browser
-    const res = await fetch("/.netlify/functions/chat", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ system: SYSTEM, messages: history })
+    const res=await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key='+GEMINI_API_KEY,{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({system_instruction:{parts:[{text:SYSTEM}]},contents:history})
     });
-    const data = await res.json();
-    const reply = data.content?.[0]?.text || "Sorry, something went wrong. Please try again!";
-    history.push({ role: 'assistant', content: reply });
-    hideTyping();
-    addBot(reply);
-  } catch {
-    hideTyping();
-    addBot("Oops! Something went wrong. Please try again 🐾");
-  }
-  busy = false;
+    const data=await res.json();
+    const reply=data.candidates?.[0]?.content?.parts?.[0]?.text||"Sorry, something went wrong. Please try again!";
+    history.push({role:'model',parts:[{text:reply}]});
+    hideTyping(); addBot(reply);
+  } catch(e) { hideTyping(); addBot("Oops! Something went wrong. Please try again 🐾"); }
+  busy=false;
 }
-
-function handleKey(e) {
-  if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); }
-}
-
-window.onload = () => {
-  addBot(
-    "Woof woof! 🐾 Welcome to Paws Gone Wild Grooming! I can help with pricing, services, or booking your furry friend in. What can I help you with today?",
-    ["💰 Pricing & services", "📅 Book a grooming", "📍 How does it work?", "🐕 What pets do you groom?"]
-  );
-};
+function handleKey(e) { if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();sendMessage();} }
+window.onload=()=>{ addBot("Woof woof! 🐾 Welcome to Paws Gone Wild Grooming! I can help with pricing, services, or booking your furry friend in. What can I help you with today?",["💰 Pricing & services","📅 Book a grooming","📍 How does it work?","🐕 What pets do you groom?"]); };
 </script>
 </body>
 </html>
